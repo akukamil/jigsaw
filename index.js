@@ -353,7 +353,7 @@ sound = {
 
 // Usage
 let rng = new SeededRandom(12345);
-const CELL_ON_STAGE_SIZE=380/8
+const CELL_ON_STAGE_SIZE=580/12
 irnd=(min,max)=>{
 	min=Math.ceil(min)
 	max=Math.floor(max)
@@ -1229,7 +1229,7 @@ puzzle={
 		this.fill_connect_info(i,w,h)
 
 		//размещаем аккуратно блоки
-		soft_placer.run(11,8)
+		soft_placer.run(12,8)
 		for (let i=0;i<this.blocks_num;i++){
 			const block=objects.puzzle_blocks[i]
 			puzzle.place_block_to_grid(block)
@@ -1550,8 +1550,13 @@ async function init_game_env(lang) {
 
 
 	//создаем приложение пикси и добавляем тень
+	//создаем приложение пикси и добавляем тень
+	const dw=M_WIDTH/document.body.clientWidth;
+	const dh=M_HEIGHT/document.body.clientHeight;
+	const resolution=Math.max(dw,dh,1);
+	const opts={width:800, height:450,antialias:false,resolution,autoDensity:true};
 	app.stage = new PIXI.Container();
-	app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});
+	app.renderer = new PIXI.Renderer(opts);
 	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
 	document.body.style.backgroundColor = 'rgb(141,211,200)';
 
