@@ -353,7 +353,7 @@ sound = {
 
 // Usage
 let rng = new SeededRandom(12345);
-const CELL_ON_STAGE_SIZE=580/12
+const CELL_ON_STAGE_SIZE=609/13
 irnd=(min,max)=>{
 	min=Math.ceil(min)
 	max=Math.floor(max)
@@ -628,14 +628,14 @@ soft_placer={
 
 		const vis_blocks=objects.puzzle_blocks.filter(b=>b.visible===true)
 
-		for (let v=0;v<1000;v++){
+		for (let v=0;v<3000;v++){
 
 			this.area=Array(h).fill('').map(() => Array(w).fill(''))
 			this.area.w=w
 			this.area.h=h
 
 			let blocks_added=0
-			for (let i=0;i<1000;i++){
+			for (let i=0;i<500;i++){
 
 				const sy=irnd(0,this.area.h-1)
 				const sx=irnd(0,this.area.w-1)
@@ -681,7 +681,7 @@ soft_placer={
 			if (tar_point!=='') return 0
 
 			//проверяем соседей
-			for (const dir of all_dirs){
+			for (const dir of dirs){
 
 				const my=sy+pnt[0]+dir[0]
 				const mx=sx+pnt[1]+dir[1]
@@ -1229,7 +1229,7 @@ puzzle={
 		this.fill_connect_info(i,w,h)
 
 		//размещаем аккуратно блоки
-		soft_placer.run(12,8)
+		soft_placer.run(13,8)
 		for (let i=0;i<this.blocks_num;i++){
 			const block=objects.puzzle_blocks[i]
 			puzzle.place_block_to_grid(block)
