@@ -65,6 +65,75 @@ class SeededRandom {
   }
 }
 
+class cat_card_class extends PIXI.Container{
+	
+	constructor(){
+		
+		super()
+		
+		this.bcg_shadow=new PIXI.Sprite(assets.cat_shadow)
+		this.bcg_shadow.x=-10
+		this.bcg_shadow.y=-10
+		this.bcg_shadow.width=200
+		this.bcg_shadow.height=100
+		this.bcg_shadow.interactive=true
+		this.bcg_shadow.pointerdown=cat_menu.cat_down
+		
+		this.bcg=new PIXI.Graphics()
+		
+		this.cat_name=new PIXI.BitmapText('ПОГОДА', {fontName: 'mfont',fontSize: 22,align: 'right'}); 
+		this.cat_name.x=170
+		this.cat_name.y=15
+		this.cat_name.anchor.set(1,0.5)
+		
+		this.cat_progress_bar_bcg=new PIXI.Sprite(assets.cat_progress_bar_bcg)
+		this.cat_progress_bar_bcg.x=70
+		this.cat_progress_bar_bcg.y=40
+		this.cat_progress_bar_bcg.width=110
+		this.cat_progress_bar_bcg.height=40
+
+		
+		this.cat_progress_mask=new PIXI.Graphics()
+		this.cat_progress_mask.x=80
+		this.cat_progress_mask.y=50
+		this.cat_progress_mask.beginFill(0xff0000)
+		this.cat_progress_mask.drawRect(0,0,1,20)
+		
+		this.cat_progress_bar=new PIXI.Sprite(assets.cat_progress_bar)
+		this.cat_progress_bar.x=70
+		this.cat_progress_bar.y=40
+		this.cat_progress_bar.width=110
+		this.cat_progress_bar.height=40
+		this.cat_progress_bar.mask=this.cat_progress_mask
+		
+		this.cat_progress=new PIXI.BitmapText('0/10', {fontName: 'mfont',fontSize: 18}); 
+		this.cat_progress.anchor.set(0.5,0.5)
+		this.cat_progress.x=125
+		this.cat_progress.y=59
+		this.cat_progress.anchor.set(0.5,0.5)
+		
+		this.frame=new PIXI.Sprite(assets.cat_frame)
+		this.frame.x=-10
+		this.frame.y=-10
+		this.frame.width=200
+		this.frame.height=100
+		
+		this.addChild(this.bcg_shadow,this.bcg,this.cat_progress_bar_bcg,this.cat_progress_bar,this.cat_progress_mask,this.frame,this.cat_name,this.cat_progress)
+		
+	}
+	
+	set_bcg(t){
+		
+		this.bcg.clear()
+		this.bcg.beginTextureFill({texture:t})
+		this.bcg.drawRoundedRect(0,0,180,80,15)
+		this.bcg.endFill()
+		
+	}
+	
+	
+}
+
 anim3={
 
 	c1: 1.70158,
@@ -352,11 +421,12 @@ sound = {
 }
 
 // Usage
-let rng = new SeededRandom(12345);
+let rng = new SeededRandom(2);
 const CELL_ON_STAGE_SIZE=609/13
 irnd=(min,max)=>{
 	min=Math.ceil(min)
 	max=Math.floor(max)
+	//return Math.floor(rng.next()*(max-min+1))+min
 	return Math.floor(Math.random()*(max-min+1))+min
 }
 
@@ -416,6 +486,7 @@ main_loader={
 				loader.add(load_list[i].name, git_src+'res/RUS/' + load_list[i].name + '.' +  load_list[i].image_format);
 
 
+		loader.add('mfont',git_src+'fonts/core_sans_ds/font.fnt');
 		loader.add('snap1','snap1.mp3');
 		loader.add('snap2','snap2.mp3');
 		loader.add('puzzle_complete','puzzle_complete.mp3');
@@ -618,6 +689,16 @@ class puzzle_block_class extends PIXI.Container{
 
 }
 
+img_data=[
+	['nature',10],
+	['houses',10],
+	['harry_potter',10]
+]
+let cur_cat_id=0
+let cur_img=0
+let cur_puzzle_data=0
+const img_loader=new PIXI.Loader()
+
 soft_placer={
 
 	area:[],
@@ -717,6 +798,15 @@ soft_placer={
 
 }
 
+const puzzle_data=[
+
+	{name:'nature',size:5,img_range:[0,2],completed:0},
+	{name:'houses',size:6,img_range:[0,2],completed:0},
+
+]
+
+let total_completed=0
+
 puzzle={
 
 	z:0,
@@ -725,6 +815,25 @@ puzzle={
 	blocks_num:0,
 	w:0,
 	h:0,
+	img_texture:0,
+	
+	async activate(){
+		
+		await this.load_img(`images/${cur_puzzle_data.name}/${cur_completed}.jpg`)
+		this.draw(cur_puzzle_data.size,cur_puzzle_data.size)
+
+	},
+	
+	async load_img(path){
+		
+		const cat_name=img_data[cur_cat_id][0]
+		const res_name=cat_name+cur_img
+		img_loader.add(res_name,path);
+		await new Promise(res=>img_loader.load(res))
+		
+		this.img_texture=img_loader.resources[res_name].texture
+		
+	},
 
 	get_size(figure_id){
 
@@ -862,17 +971,6 @@ puzzle={
 		}
 
 		return 1
-
-	},
-
-	remove_figure_from_area(sy,sx,figure,area){
-
-		//размещаем фигуру
-		for (let point of figure){
-			const ty=sy+point[0]
-			const tx=sx+point[1]
-			area[ty][tx]=0
-		}
 
 	},
 
@@ -1033,27 +1131,6 @@ puzzle={
 
 	},
 
-	get_frame_data(figure){
-
-		//рисуем рамку
-		const nodes_area=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-
-		//размещаем точки фигуры (узлы)
-		for (let pnt of figure){
-			const y=pnt[0]
-			const x=pnt[1]
-
-			nodes_area[y][x]++
-			nodes_area[y][x+1]++
-			nodes_area[y+1][x+1]++
-			nodes_area[y+1][x]++
-		}
-
-		const lines=this.get_lines_from_nodes(nodes_area)
-		return lines
-
-	},
-
 	get_lines_from_nodes(nodes_area){
 
 		let start_point=0
@@ -1100,6 +1177,12 @@ puzzle={
 	async close_puzzle(){
 
 
+		cur_img++
+		if (cur_img>9){
+			cur_img=0
+			cur_cat_id++
+		}
+
 		const [y,x]=this.get_true_pos()
 
 		const dy=y-objects.puzzle_cont.y
@@ -1120,21 +1203,25 @@ puzzle={
 		await anim3.add(objects.puzzle_cont,{scale_xy:[1,1.5,'linear'],x:[sx,400,'linear'],y:[sy,225,'linear'],angle:[0,10,'linear']}, true, 3)
 		await anim3.add(objects.puzzle_cont,{scale_xy:[1.5,1.4,'linear'],alpha:[1,0,'linear']}, true, 2)
 
-		this.draw(6,6)
+		
+		this.close()
+		main_menu.next_puzzle();
+		main_menu.activate()
 
 	},
 
-	draw(w,h){
+	async draw(w,h){
 
 		//размер поля в ячейках
 		const w_total=w
 		const h_total=h
 		this.w=w
-		this.h=h
-
-		const img_texture=assets['img'+irnd(0,21)]
+		this.h=h		
+		
+		objects.puzzle_bcg.visible=true
 
 		//восстанавливаем положение паззла
+		objects.puzzle_cont.visible=true
 		objects.puzzle_cont.pivot.y=0
 		objects.puzzle_cont.pivot.x=0
 		objects.puzzle_cont.alpha=1
@@ -1182,7 +1269,7 @@ puzzle={
 			//определяем размеры фигуры в у.е.
 			const [figure_width,figure_height]=this.get_size(id)
 
-			const t=new PIXI.Texture(img_texture.baseTexture,new PIXI.Rectangle(sx*CELL_ON_IMAGE_SIZE,sy*CELL_ON_IMAGE_SIZE,figure_width*CELL_ON_IMAGE_SIZE,figure_height*CELL_ON_IMAGE_SIZE))
+			const t=new PIXI.Texture(this.img_texture.baseTexture,new PIXI.Rectangle(sx*CELL_ON_IMAGE_SIZE,sy*CELL_ON_IMAGE_SIZE,figure_width*CELL_ON_IMAGE_SIZE,figure_height*CELL_ON_IMAGE_SIZE))
 			const matrix = new PIXI.Matrix()
 			matrix.scale(w_total*CELL_ON_STAGE_SIZE/1000, h_total*CELL_ON_STAGE_SIZE/1000)
 
@@ -1220,7 +1307,7 @@ puzzle={
 			block.sx=sx
 
 			//вычисляем и рисуем обводку
-			draw_comp_frame([i])
+			this.draw_comp_frame([i])
 
 			i++
 		}
@@ -1252,6 +1339,7 @@ puzzle={
 
 	send_composition_to_front(block_ids){
 
+		console.log('SENT_TO_FRONT',block_ids)
 		let min_z=999999
 		for (let ind of block_ids){
 			const block=objects.puzzle_blocks[ind]
@@ -1264,7 +1352,7 @@ puzzle={
 			block.zIndex+=z_shift
 			this.z=Math.max(this.z,block.zIndex)
 		}
-
+		objects.puzzle_cont.sortChildren()
 	},
 
 	get_figure_cell_pos(fig_ind, cell_ind){
@@ -1274,6 +1362,111 @@ puzzle={
 		const ty=figure.gy+cell_data[0]
 		const tx=figure.gx+cell_data[1]
 		return [ty,tx]
+
+	},
+
+	get_comp_start_pos(comp){
+		
+		let miny=9999
+		let minx=9999
+		for (let ind of comp){
+			const block=objects.puzzle_blocks[ind]
+			miny=Math.min(miny,block.gy)
+			minx=Math.min(minx,block.gx)
+		}
+		
+		return [miny,minx]
+	
+	},
+
+	make_overlay_shape(comp){
+		
+		objects.overlay_shape.clear()
+		objects.overlay_shape.beginFill(0xffffff)
+			
+		//определяем начало композишна
+		const [miny,minx]=this.get_comp_start_pos(comp)
+			
+		//делаем узлы
+		for (let ind of comp){
+
+			const block=objects.puzzle_blocks[ind]
+			for (let pnt of figures[block.id]){
+
+				const y=block.gy+pnt[0]
+				const x=block.gx+pnt[1]
+
+				objects.overlay_shape.drawRect(x*CELL_ON_STAGE_SIZE+objects.puzzle_bcg.x, y*CELL_ON_STAGE_SIZE+objects.puzzle_bcg.y, CELL_ON_STAGE_SIZE, CELL_ON_STAGE_SIZE)
+
+			}
+		}
+		
+		anim3.add(objects.overlay_shape,{alpha:[0.75,0,'linear']}, false, 1)
+		//anim3.add(objects.hl,{x:[0,800,'linear']}, false, 1)
+
+			
+	},
+
+	draw_comp_frame(comp){
+
+		//первый элемент в композиции - держатель общей обводки
+		const holder_block=objects.puzzle_blocks[comp[0]]
+
+		//убираем рамки у остальной композиции
+		for (let i=1;i<comp.length;i++){
+			const block=objects.puzzle_blocks[comp[i]]
+			block.frame.visible=false
+		}
+
+		//рисуем рамку
+		const nodes_area=Array(15).fill(0).map(()=>Array(15).fill(0))
+
+		//определяем начало композишна
+		const [miny,minx]=puzzle.get_comp_start_pos(comp)
+
+		//делаем узлы
+		for (let ind of comp){
+
+			const block=objects.puzzle_blocks[ind]
+			for (let pnt of figures[block.id]){
+
+				const y=block.gy+pnt[0]-miny
+				const x=block.gx+pnt[1]-minx
+
+				nodes_area[y][x]++
+				nodes_area[y][x+1]++
+				nodes_area[y+1][x+1]++
+				nodes_area[y+1][x]++
+
+			}
+		}
+
+		//разница между холдером и композицией
+		const dy=miny-holder_block.gy
+		const dx=minx-holder_block.gx
+
+		//вычисляем линии
+		const lines=puzzle.get_lines_from_nodes(nodes_area)
+
+		holder_block.frame.clear()
+		holder_block.frame.lineStyle({width:1.5,color:0xffffff,cap:'round'})
+		holder_block.frame.tint=0x333333
+		for (const line of lines){
+
+			const sty=line[0]+dy
+			const stx=line[1]+dx
+			const eny=line[2]+dy
+			const enx=line[3]+dx
+
+			holder_block.frame.moveTo(stx*CELL_ON_STAGE_SIZE, sty*CELL_ON_STAGE_SIZE)
+			holder_block.frame.lineTo(enx*CELL_ON_STAGE_SIZE, eny*CELL_ON_STAGE_SIZE)
+		}
+
+		//обновляем z индекс
+		const ind=holder_block.ind
+		holder_block.frame.visible=true
+		//puzzle.send_composition_to_front([ind])
+		//objects.puzzle_cont.sortChildren()
 
 	},
 
@@ -1311,6 +1504,12 @@ puzzle={
 				p++
 			}
 		}
+	},
+	
+	close(){
+		
+		objects.puzzle_bcg.visible=false
+		objects.puzzle_cont.visible=false
 	}
 }
 
@@ -1319,6 +1518,76 @@ let drag_sy=0
 let drag_sx=0
 let drag_array=[]
 let compositions=[]
+
+main_menu={
+	
+	activate(){
+		
+		this.calc_cur_puzzle()
+		const num_of_puzzles=1+cur_puzzle_data.img_range[1]-cur_puzzle_data.img_range[0]
+		objects.puzzle_menu_cont.visible=true
+		objects.puzzle_menu_bar_mask.width=120*cur_completed/num_of_puzzles
+		objects.puzzle_menu_progress.text=`${cur_completed}/${num_of_puzzles}`
+		objects.puzzle_menu_size.text=`${cur_puzzle_data.size}x${cur_puzzle_data.size}`
+		this.set_bcg()
+	},
+	
+	calc_cur_puzzle(){
+		
+		let left=total_completed
+		for (const pdata of puzzle_data){
+			
+			const num_of_puzzles=1+pdata.img_range[1]-pdata.img_range[0]
+			left-=num_of_puzzles
+			
+			if (left>=num_of_puzzles){				
+				continue
+			}
+			
+			if (left===0){
+				continue
+			}
+			
+			if (left<0){
+				left+=num_of_puzzles
+				cur_puzzle_data=pdata
+				break
+			}
+			
+		}
+		
+		cur_completed=Math.max(left,0)
+		
+		
+	},
+	
+	set_bcg(){
+
+		objects.puzzle_menu_img.clear()
+		objects.puzzle_menu_img.beginTextureFill({texture:assets[`${cur_puzzle_data.name}_theme_icon`]})
+		objects.puzzle_menu_img.drawRoundedRect(0,0,120,120,15)
+		objects.puzzle_menu_img.endFill()
+
+	},
+
+	start_down(){
+		puzzle.activate()
+		this.close()
+	},
+	
+	next_puzzle(){	
+		
+		total_completed++
+
+		
+	},
+	
+	close(){
+		
+		objects.puzzle_menu_cont.visible=false
+		
+	}
+}
 
 function block_down(e){
 
@@ -1341,7 +1610,6 @@ function block_down(e){
 
 	//обновляем z индекс
 	puzzle.send_composition_to_front(drag_array)
-	objects.puzzle_cont.sortChildren()
 
 }
 
@@ -1355,7 +1623,7 @@ function snap_block(block){
 	block.gy=Math.round(ty / CELL_ON_STAGE_SIZE)
 	block.gx=Math.round(tx / CELL_ON_STAGE_SIZE)
 
-    puzzle.place_block_to_grid(block)
+	puzzle.place_block_to_grid(block)
 }
 
 function try_get_composition(drag_array){
@@ -1437,7 +1705,8 @@ function block_up(e){
 			objects.puzzle_blocks[ind].composition_ind=new_comp_ind
 		}
 
-		draw_comp_frame(comp)
+		puzzle.draw_comp_frame(comp)
+		puzzle.make_overlay_shape(comp)
 		assets.snap2.play()
 
 		if (new_comp.length===puzzle.blocks_num){
@@ -1450,77 +1719,9 @@ function block_up(e){
 
 	puzzle.send_composition_to_front(comp)
 
+	
+	
 
-
-
-}
-
-function draw_comp_frame(comp){
-
-	//первый элемент в композиции - держатель общей обводки
-	const holder_block=objects.puzzle_blocks[comp[0]]
-
-	//убираем рамки у остальной композиции
-	for (let i=1;i<comp.length;i++){
-		const block=objects.puzzle_blocks[comp[i]]
-		block.frame.visible=false
-	}
-
-	//рисуем рамку
-	const nodes_area=Array(15).fill(0).map(()=>Array(15).fill(0))
-
-	//определяем начало композишна
-	let miny=9999
-	let minx=9999
-	for (let ind of comp){
-		const block=objects.puzzle_blocks[ind]
-		miny=Math.min(miny,block.gy)
-		minx=Math.min(minx,block.gx)
-	}
-
-	//делаем узлы
-	for (let ind of comp){
-
-		const block=objects.puzzle_blocks[ind]
-		for (let pnt of figures[block.id]){
-
-			const y=block.gy+pnt[0]-miny
-			const x=block.gx+pnt[1]-minx
-
-			nodes_area[y][x]++
-			nodes_area[y][x+1]++
-			nodes_area[y+1][x+1]++
-			nodes_area[y+1][x]++
-
-		}
-	}
-
-	//разница между холдером и композицией
-	const dy=miny-holder_block.gy
-	const dx=minx-holder_block.gx
-
-	//вычисляем линии
-	const lines=puzzle.get_lines_from_nodes(nodes_area)
-
-	holder_block.frame.clear()
-	holder_block.frame.lineStyle({width:1.5,color:0xffffff,cap:'round'})
-	holder_block.frame.tint=0x333333
-	for (const line of lines){
-
-		const sty=line[0]+dy
-		const stx=line[1]+dx
-		const eny=line[2]+dy
-		const enx=line[3]+dx
-
-		holder_block.frame.moveTo(stx*CELL_ON_STAGE_SIZE, sty*CELL_ON_STAGE_SIZE)
-		holder_block.frame.lineTo(enx*CELL_ON_STAGE_SIZE, eny*CELL_ON_STAGE_SIZE)
-	}
-
-	//обновляем z индекс
-	const ind=holder_block.ind
-	holder_block.frame.visible=true
-	//puzzle.send_composition_to_front([ind])
-	//objects.puzzle_cont.sortChildren()
 
 }
 
@@ -1568,7 +1769,7 @@ async function init_game_env(lang) {
 	resize();
 	window.addEventListener("resize", resize);
 
-	puzzle.draw(6,6)
+	main_menu.activate()
 
 }
 
