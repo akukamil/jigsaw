@@ -669,12 +669,15 @@ class puzzle_block_class extends PIXI.Container{
 
 		this.composition_ind=-1
 
-		this.bcg=new PIXI.Graphics()
-		this.bcg.width=1
-		this.bcg.height=1
-		this.bcg.interactive=true
-		this.bcg.pointerdown=block_down.bind(this)
-		this.bcg.pointerup=block_up.bind(this)
+		this.m_cells=[]
+		for (let i=0;i<5;i++){			
+			const s=new PIXI.Sprite()
+			s.visible=false
+			s.interactive=true
+			s.pointerdown=block_down.bind(this)
+			s.pointerup=block_up.bind(this)
+			this.m_cells.push(s)
+		}
 
 		this.frame=new PIXI.Graphics()
 		this.frame.width=1
@@ -684,7 +687,7 @@ class puzzle_block_class extends PIXI.Container{
 
 		this.visible=false
 
-		this.addChild(this.bcg,this.frame)
+		this.addChild(...this.m_cells,this.frame)
 	}
 
 }
@@ -1232,6 +1235,7 @@ puzzle={
 		objects.puzzle_blocks.forEach(b=>{
 			b.visible=false
 			b.composition_ind=-1
+			b.m_cells.forEach(m=>m.visible=false)
 		})
 		objects.puzzle_shadows.forEach(b=>{
 			b.visible=false
@@ -1264,17 +1268,12 @@ puzzle={
 			const sy=block_data.y
 			const sx=block_data.x
 			const block=objects.puzzle_blocks[i]
+			const m_cells=block.m_cells
 			const shadow=objects.puzzle_shadows[i]
 
 			//определяем размеры фигуры в у.е.
 			const [figure_width,figure_height]=this.get_size(id)
 
-			const t=new PIXI.Texture(this.img_texture.baseTexture,new PIXI.Rectangle(sx*CELL_ON_IMAGE_SIZE,sy*CELL_ON_IMAGE_SIZE,figure_width*CELL_ON_IMAGE_SIZE,figure_height*CELL_ON_IMAGE_SIZE))
-			const matrix = new PIXI.Matrix()
-			matrix.scale(w_total*CELL_ON_STAGE_SIZE/1000, h_total*CELL_ON_STAGE_SIZE/1000)
-
-			block.bcg.clear()
-			block.bcg.beginTextureFill({texture:t,matrix})
 
 			shadow.clear()
 			shadow.beginFill(0x333333);
@@ -1285,18 +1284,27 @@ puzzle={
 
 				const y=pnt[0]
 				const x=pnt[1]
+				
+				//вырезаем кусок текстуры
+				const t=new PIXI.Texture(this.img_texture.baseTexture,new PIXI.Rectangle((sx+x)*CELL_ON_IMAGE_SIZE,(sy+y)*CELL_ON_IMAGE_SIZE,CELL_ON_IMAGE_SIZE,CELL_ON_IMAGE_SIZE))
+
 
 				const cell=this.area_data[sy+y][sx+x]
 				cell.fig_ind=i
 				cell.cell_ind=p
+				
+				m_cells[p].texture=t
+				m_cells[p].y=y*CELL_ON_STAGE_SIZE
+				m_cells[p].x=x*CELL_ON_STAGE_SIZE
+				m_cells[p].visible=true
+				m_cells[p].width=CELL_ON_STAGE_SIZE
+				m_cells[p].height=CELL_ON_STAGE_SIZE
 
 				shadow.drawRect(x*CELL_ON_STAGE_SIZE, y*CELL_ON_STAGE_SIZE, CELL_ON_STAGE_SIZE, CELL_ON_STAGE_SIZE)
-				block.bcg.drawRect(x*CELL_ON_STAGE_SIZE, y*CELL_ON_STAGE_SIZE, CELL_ON_STAGE_SIZE, CELL_ON_STAGE_SIZE)
 				p++
 			}
 
 			shadow.endFill()
-			block.bcg.endFill()
 
 			//запоминаем параметры блока
 			block.id=id
