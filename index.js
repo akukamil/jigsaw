@@ -422,7 +422,7 @@ sound = {
 
 // Usage
 let rng = new SeededRandom(2);
-const CELL_ON_STAGE_SIZE=609/13
+const CELL_ON_STAGE_SIZE=720/18
 irnd=(min,max)=>{
 	min=Math.ceil(min)
 	max=Math.floor(max)
@@ -1324,7 +1324,7 @@ puzzle={
 		this.fill_connect_info(i,w,h)
 
 		//размещаем аккуратно блоки
-		soft_placer.run(13,8)
+		soft_placer.run(18,9)
 		for (let i=0;i<this.blocks_num;i++){
 			const block=objects.puzzle_blocks[i]
 			puzzle.place_block_to_grid(block)
@@ -1614,6 +1614,8 @@ function block_down(e){
 		block.sy=block.y
 		block.sx=block.x
 		block.frame.tint=0xffffff
+		objects.puzzle_shadows[ind].visible=false
+		block.m_cells.forEach(c=>c.alpha=0.75)
 	}
 
 	//обновляем z индекс
@@ -1696,6 +1698,8 @@ function block_up(e){
 	for (let m of drag_array){
 		const block=objects.puzzle_blocks[m]
 		block.frame.tint=0x333333
+		block.m_cells.forEach(c=>c.alpha=1)
+		objects.puzzle_shadows[m].visible=true
 		snap_block(block)
 	}
 
