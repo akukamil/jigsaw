@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}},fbs, game_res, assets={},objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src="";
+var app ={stage:{},renderer:{}},fbs, game_res, assets={},objects={},some_process = {}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src="";
 
 const dirs=[[0,-1],[0,1],[-1,0],[1,0]]
 const figures=[
@@ -487,9 +487,11 @@ main_loader={
 
 
 		loader.add('mfont',git_src+'fonts/core_sans_ds/font.fnt');
+		loader.add('mfont2',git_src+'fonts/core_sans_ds_shadow/font.fnt');
 		loader.add('snap1','snap1.mp3');
 		loader.add('snap2','snap2.mp3');
 		loader.add('puzzle_complete','puzzle_complete.mp3');
+		loader.add('tile_bcg','res/tile_bcg.jpg');
 
 		for (let i=0;i<=21;i++)
 			loader.add('img'+i,`images/${i}.jpg`);
@@ -692,14 +694,13 @@ class puzzle_block_class extends PIXI.Container{
 
 }
 
-img_data=[
-	['nature',10],
-	['houses',10],
-	['harry_potter',10]
-]
+
 let cur_cat_id=0
 let cur_img=0
 let cur_puzzle_data=0
+let total_completed=0
+let cur_completed=0
+
 const img_loader=new PIXI.Loader()
 
 soft_placer={
@@ -803,12 +804,10 @@ soft_placer={
 
 const puzzle_data=[
 
-	{name:'nature',size:5,img_range:[0,2],completed:0},
-	{name:'houses',size:6,img_range:[0,2],completed:0},
+	{name:'nature',size:5,img_range:[0,9],completed:0},
+	{name:'houses',size:6,img_range:[0,9],completed:0},
 
 ]
-
-let total_completed=0
 
 puzzle={
 
@@ -818,19 +817,72 @@ puzzle={
 	blocks_num:0,
 	w:0,
 	h:0,
+	touches:0,
+	seconds:0,
 	img_texture:0,
 	
 	async activate(){
 		
 		await this.load_img(`images/${cur_puzzle_data.name}/${cur_completed}.jpg`)
-		this.draw(cur_puzzle_data.size,cur_puzzle_data.size)
+		this.draw(cur_puzzle_data.size,cur_puzzle_data.size)		
+		
+		this.inc_touches(0)
+		
+		this.seconds=0
+		objects.t_time.text='00:00'
+		this.sec_timer=setInterval(()=>{this.sec_tick()},1000)
+		
+		objects.bcg.visible=true
+		objects.snap_bcg.visible=true
+		objects.header_cont.visible=true
 
+	},
+	
+	form_sec(seconds) {
+
+		const hours = Math.floor(seconds / 3600);
+		const minutes = Math.floor((seconds % 3600) / 60);
+		const remainingSeconds = Math.floor(seconds % 60);
+
+		// Format with leading zeros
+		const formattedMinutes = minutes.toString().padStart(2, '0');
+		const formattedSeconds = remainingSeconds.toString().padStart(2, '0');
+
+
+		if (hours === 0) {
+			return `${formattedMinutes}:${formattedSeconds}`;
+		} else {
+			const formattedHours = hours.toString().padStart(2, '0');
+			return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+		}
+	},
+	
+	sec_tick(){
+		
+		objects.t_time.text=this.form_sec(this.seconds)
+		this.seconds++
+	},
+	
+	inc_touches(touches){
+		
+		//установка
+		if (touches>=0){
+			this.touches=touches
+			objects.t_touches.text=this.touches
+			return
+		}
+		
+		this.touches++
+		objects.t_touches.text=this.touches
+		
 	},
 	
 	async load_img(path){
 		
-		const cat_name=img_data[cur_cat_id][0]
-		const res_name=cat_name+cur_img
+		const res_name=cur_puzzle_data.name+cur_completed
+		
+		if (img_loader.resources[res_name]) return img_loader.resources[res_name].texture
+		
 		img_loader.add(res_name,path);
 		await new Promise(res=>img_loader.load(res))
 		
@@ -998,8 +1050,8 @@ puzzle={
 
 	place_block_to_grid(block){
 
-		block.y = block.gy * CELL_ON_STAGE_SIZE+objects.puzzle_bcg.y
-		block.x = block.gx * CELL_ON_STAGE_SIZE+objects.puzzle_bcg.x
+		block.y = block.gy * CELL_ON_STAGE_SIZE+objects.snap_bcg.y
+		block.x = block.gx * CELL_ON_STAGE_SIZE+objects.snap_bcg.x
 
 		objects.puzzle_shadows[block.ind].y=block.y+5
 		objects.puzzle_shadows[block.ind].x=block.x+5
@@ -1177,9 +1229,17 @@ puzzle={
 
 	},
 
+	exit_down(){
+	
+		this.close();
+		main_menu.activate(0)
+		
+	},
+
 	async close_puzzle(){
 
-
+		clearInterval(this.sec_timer)
+		
 		cur_img++
 		if (cur_img>9){
 			cur_img=0
@@ -1190,7 +1250,6 @@ puzzle={
 
 		const dy=y-objects.puzzle_cont.y
 		const dx=x-objects.puzzle_cont.x
-
 
 		objects.puzzle_cont.pivot.y=this.h*CELL_ON_STAGE_SIZE*0.5+y
 		objects.puzzle_cont.pivot.x=this.w*CELL_ON_STAGE_SIZE*0.5+x
@@ -1205,11 +1264,9 @@ puzzle={
 		
 		await anim3.add(objects.puzzle_cont,{scale_xy:[1,1.5,'linear'],x:[sx,400,'linear'],y:[sy,225,'linear'],angle:[0,10,'linear']}, true, 3)
 		await anim3.add(objects.puzzle_cont,{scale_xy:[1.5,1.4,'linear'],alpha:[1,0,'linear']}, true, 2)
-
 		
 		this.close()
-		main_menu.next_puzzle();
-		main_menu.activate()
+		main_menu.activate(1)
 
 	},
 
@@ -1221,7 +1278,7 @@ puzzle={
 		this.w=w
 		this.h=h		
 		
-		objects.puzzle_bcg.visible=true
+		
 
 		//восстанавливаем положение паззла
 		objects.puzzle_cont.visible=true
@@ -1404,7 +1461,7 @@ puzzle={
 				const y=block.gy+pnt[0]
 				const x=block.gx+pnt[1]
 
-				objects.overlay_shape.drawRect(x*CELL_ON_STAGE_SIZE+objects.puzzle_bcg.x, y*CELL_ON_STAGE_SIZE+objects.puzzle_bcg.y, CELL_ON_STAGE_SIZE, CELL_ON_STAGE_SIZE)
+				objects.overlay_shape.drawRect(x*CELL_ON_STAGE_SIZE+objects.snap_bcg.x, y*CELL_ON_STAGE_SIZE+objects.snap_bcg.y, CELL_ON_STAGE_SIZE, CELL_ON_STAGE_SIZE)
 
 			}
 		}
@@ -1516,8 +1573,11 @@ puzzle={
 	
 	close(){
 		
-		objects.puzzle_bcg.visible=false
+		clearInterval(this.sec_timer)
+		objects.snap_bcg.visible=false
+		objects.bcg.visible=false
 		objects.puzzle_cont.visible=false
+		objects.header_cont.visible=false
 	}
 }
 
@@ -1529,15 +1589,37 @@ let compositions=[]
 
 main_menu={
 	
-	activate(){
+	async activate(next_puzzle){
 		
+		//обновляем данные паззла
 		this.calc_cur_puzzle()
-		const num_of_puzzles=1+cur_puzzle_data.img_range[1]-cur_puzzle_data.img_range[0]
+		const cur_level_len=1+cur_puzzle_data.img_range[1]-cur_puzzle_data.img_range[0]
+		const bar_dx=objects.puzzle_menu_bar_mask.max_w/cur_level_len
+				
+		some_process.anim_bcg=()=>{
+			objects.anim_bcg.tilePosition.x+=0.15
+			objects.anim_bcg.tilePosition.y+=0.15
+		}	
+		objects.anim_bcg.visible=true
+		objects.anim_bcg_overlay.visible=true
 		objects.puzzle_menu_cont.visible=true
-		objects.puzzle_menu_bar_mask.width=120*cur_completed/num_of_puzzles
-		objects.puzzle_menu_progress.text=`${cur_completed}/${num_of_puzzles}`
+		
+		if (next_puzzle){			
+			total_completed++
+			const cur_w=objects.puzzle_menu_bar_mask.width
+			const tar_w=cur_w+bar_dx
+			await anim3.add(objects.puzzle_menu_bar_mask,{width:[cur_w,tar_w,'linear']}, true, 2)
+			this.calc_cur_puzzle()
+		}
+		
+		
+		objects.puzzle_menu_bar_mask.width=280*cur_completed/cur_level_len
+		objects.puzzle_menu_progress.text=`${cur_completed}/${cur_level_len}`
 		objects.puzzle_menu_size.text=`${cur_puzzle_data.size}x${cur_puzzle_data.size}`
-		this.set_bcg()
+
+		this.set_bcg()	
+		
+
 	},
 	
 	calc_cur_puzzle(){
@@ -1548,7 +1630,7 @@ main_menu={
 			const num_of_puzzles=1+pdata.img_range[1]-pdata.img_range[0]
 			left-=num_of_puzzles
 			
-			if (left>=num_of_puzzles){				
+			if (left>=num_of_puzzles){
 				continue
 			}
 			
@@ -1579,25 +1661,35 @@ main_menu={
 	},
 
 	start_down(){
+		
+		if (anim3.any_on()){
+			return
+		}
+		
 		puzzle.activate()
 		this.close()
 	},
 	
-	next_puzzle(){	
+	next_puzzle(){
 		
-		total_completed++
+		
 
 		
 	},
 	
 	close(){
 		
+		some_process.anim_bcg=()=>{}
 		objects.puzzle_menu_cont.visible=false
-		
+		objects.anim_bcg.visible=false
+		objects.anim_bcg_overlay.visible=false
 	}
 }
 
 function block_down(e){
+
+	//увеличиваем касания
+	puzzle.inc_touches()
 
 	drag=1
 	drag_sy=e.data.global.y/app.stage.scale.y
@@ -1627,8 +1719,8 @@ function snap_block(block){
 
 	//const GRID_SIZE = 60
 
-	const tx=block.x-objects.puzzle_bcg.x
-	const ty=block.y-objects.puzzle_bcg.y
+	const tx=block.x-objects.snap_bcg.x
+	const ty=block.y-objects.snap_bcg.y
 
 	block.gy=Math.round(ty / CELL_ON_STAGE_SIZE)
 	block.gx=Math.round(tx / CELL_ON_STAGE_SIZE)
@@ -1776,7 +1868,7 @@ async function init_game_env(lang) {
 	await main_loader.load1()
 	//addEventListener("mousemove", e => {mouse_move(e)})
 	//запускаем главный цикл
-	main_loop();
+	main_loop()	
 
 	resize();
 	window.addEventListener("resize", resize);
@@ -1788,7 +1880,11 @@ async function init_game_env(lang) {
 function main_loop() {
 
 	game_tick+=0.016666666;
-
+	
+	//обрабатываем минипроцессы
+	for (let key in some_process)
+		some_process[key]();
+	
 	app.renderer.render(app.stage);
 	anim3.process();
 	requestAnimationFrame(main_loop);
