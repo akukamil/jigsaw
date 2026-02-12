@@ -22,12 +22,15 @@ const worlds_data=[
 	{conf:[7,7],theme:'movies',pics:[4,5,6,7]},
 	{conf:[7,7],theme:'cats',pics:[4,5,6,7,8]},
 	{conf:[7,7],theme:'cartoons',pics:[4,5,6,7,8]},
-	{conf:[7,7],theme:'food',pics:[8,9,10,11]},
-	{conf:[7,7],theme:'cartoons',pics:[9,10,11,12,13]},
+	{conf:[7,7],theme:'food',pics:[8,9,10,11]},	
 	{conf:[7,7],theme:'cats',pics:[9,10,11,12,13]},
 	{conf:[7,7],theme:'food',pics:[12,13,14,15,16,17,18]},
-	{conf:[7,7],theme:'cartoons',pics:[14,15,16,17,18,19]},
+	{conf:[7,7],theme:'cartoons',pics:[14,15,16,17,18,19]},	
+	{conf:[8,8],theme:'movies',pics:[8,9,10,11,12,13,14,15]},
 	{conf:[8,8],theme:'cartoons',pics:[20,21,22,23,24]},
+	{conf:[8,8],theme:'movies',pics:[16,17,18,19,20,21,22,23]},
+	{conf:[7,7],theme:'cartoons',pics:[9,10,11,12,13]},
+	{conf:[8,8],theme:'movies',pics:[24,25,26,27,28]},
 
 ]
 let all_completed=0
