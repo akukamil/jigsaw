@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}},fbs, game_res, assets={},objects={},some_process = {}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src="";
+var app ={stage:{},renderer:{}},fbs, game_res, assets={},objects={},some_process = {},my_data={stars:0}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src="";
 
 irnd=(min,max)=>{
 	min=Math.ceil(min)
@@ -9,12 +9,12 @@ irnd=(min,max)=>{
 }
 
 const dirs=[[0,-1],[0,1],[-1,0],[1,0]]
-const CELL_ON_STAGE_SIZE=40
+const CELL_ON_STAGE_SIZE=50
 const IMG_SIZE=800
 const img_loader=new PIXI.Loader()
 
 const worlds_data=[
-	{conf:[6,6],theme:'food',pics:[0,1,2,3]},
+	{conf:[4,4],theme:'food',pics:[0,1,2,3]},
 	{conf:[6,6],theme:'movies',pics:[0,1,2,3]},
 	{conf:[6,6],theme:'cartoons',pics:[0,1,2,3]},
 	{conf:[6,6],theme:'cats',pics:[0,1,2,3]},
@@ -110,61 +110,57 @@ class world_icon_class extends PIXI.Container{
 		this.res_assigned=''
 		
 		this.bcg=new PIXI.Sprite(assets.wcard_bcg)
-		this.bcg.width=200
-		this.bcg.height=250
+		this.bcg.width=300
+		this.bcg.height=320
 		
 		this.pic_preview=new PIXI.Graphics()
-		this.pic_preview.x=20
-		this.pic_preview.y=20	
+		this.pic_preview.x=83
+		this.pic_preview.y=98	
 		
 		this.progress_bar_mask=new PIXI.Graphics()
-		this.progress_bar_mask.x=30
-		this.progress_bar_mask.y=200
+		this.progress_bar_mask.x=80
+		this.progress_bar_mask.y=240
 		this.progress_bar_mask.beginFill(0xff0000)
-		this.progress_bar_mask.drawRect(0,0,140,30)
+		this.progress_bar_mask.drawRect(0,0,130,60)
 		this.progress_bar_mask.width=0.1
 		
 		this.progress_bar=new PIXI.Sprite(assets.wcard_progress_bar)
-		this.progress_bar.width=160
-		this.progress_bar.height=50
-		this.progress_bar.x=20
-		this.progress_bar.y=190
+		this.progress_bar.width=150
+		this.progress_bar.height=60
+		this.progress_bar.x=70
+		this.progress_bar.y=240
 		this.progress_bar.mask=this.progress_bar_mask
 		
 		this.progress_t=new PIXI.BitmapText('0 / 0', {fontName: 'mfont',fontSize: 25,align: 'center'});
 		this.progress_t.tint=0x111100;
-		this.progress_t.x=100;
-		this.progress_t.y=215;
+		this.progress_t.x=145;
+		this.progress_t.y=270;
 		this.progress_t.anchor.set(0.5,0.5)
 		
 		this.level_t=new PIXI.BitmapText('Уровень 1', {fontName: 'mfont',fontSize: 30,align: 'center'});
 		this.level_t.tint=0xffffff;
-		this.level_t.x=100;
-		this.level_t.y=0;
+		this.level_t.x=144;
+		this.level_t.y=50;
 		this.level_t.anchor.set(0.5,0.5)
 		
 		this.theme_t=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
 		this.theme_t.tint=0xffffff;
-		this.theme_t.x=85;
-		this.theme_t.y=40;
+		this.theme_t.x=190;
+		this.theme_t.y=130;
 		this.theme_t.anchor.set(0.5,0.5)
 		
-		this.size_t=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 28,align: 'center'});
+		this.size_t=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 30,align: 'center'});
 		this.size_t.tint=0xffffff;
-		this.size_t.x=66;
-		this.size_t.y=159;
+		this.size_t.x=103;
+		this.size_t.y=210;
 		this.size_t.anchor.set(0.5,0.5)
 		
-		this.conf_t=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 28,align: 'center'});
+		this.conf_t=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 30,align: 'center'});
 		this.conf_t.tint=0xffffff;
-		this.conf_t.x=145;
-		this.conf_t.y=159;
+		this.conf_t.x=204;
+		this.conf_t.y=210;
 		this.conf_t.anchor.set(0.5,0.5)
-		
-		this.front=new PIXI.Sprite(assets.wcard_front)
-		this.front.width=200
-		this.front.height=200
-		
+				
 		this.lock_icon=new PIXI.Sprite(assets.wcard_lock_img)
 		this.lock_icon.width=140
 		this.lock_icon.height=140
@@ -173,13 +169,13 @@ class world_icon_class extends PIXI.Container{
 		this.lock_icon.anchor.set(0.5,0.5)
 		this.lock_icon.visible=false
 		
-		this.pivot.x=100
-		this.pivot.y=125
+		this.pivot.x=150
+		this.pivot.y=160
 
 		this.x=x
 		this.y=y
 		
-		this.addChild(this.bcg,this.pic_preview,this.front,this.progress_bar,this.progress_bar_mask,this.progress_t,this.level_t,this.theme_t,this.size_t,this.conf_t,this.lock_icon)
+		this.addChild(this.pic_preview,this.bcg,this.progress_bar,this.progress_bar_mask,this.progress_t,this.level_t,this.theme_t,this.size_t,this.conf_t,this.lock_icon)
 		
 	}
 	
@@ -192,8 +188,8 @@ class world_icon_class extends PIXI.Container{
 		const textureHeight = texture.baseTexture.height;
 
 		// Calculate the scale to fit the texture to the circle's size
-		const scaleX = 160 / textureWidth;
-		const scaleY = 160 / textureHeight;
+		const scaleX = 126 / textureWidth;
+		const scaleY = 126 / textureHeight;
 
 		// Create a new matrix for the texture
 		const matrix = new PIXI.Matrix();
@@ -203,7 +199,7 @@ class world_icon_class extends PIXI.Container{
 		
 		this.pic_preview.clear()
 		this.pic_preview.beginTextureFill({texture,matrix})
-		this.pic_preview.drawRoundedRect(0,0,160,160,20)
+		this.pic_preview.drawCircle(63,63,63)
 		this.pic_preview.endFill()
 		
 	}
@@ -266,9 +262,8 @@ anim3={
 	c3: 1.70158 + 1,
 	c4: (2 * Math.PI) / 3,
 	c5: (2 * Math.PI) / 4.5,
-	empty_spr : {x:0,visible:false,ready:true, alpha:0},
 
-	slots: new Array(50).fill().map(u => ({obj:{},on:0,block:true,params_num:0,p_resolve:0,progress:0,vis_on_end:false,tm:0,params:new Array(10).fill().map(u => ({param:'x',s:0,f:0,d:0,func:this.linear}))})),
+	slots: new Array(55).fill().map(u => ({obj:{},on:0,block:true,params_num:0,p_resolve:0,progress:0,vis_on_end:false,tm:0,params:new Array(10).fill().map(u => ({param:'x',s:0,f:0,d:0,func:this.linear}))})),
 
 	any_on() {
 
@@ -278,8 +273,8 @@ anim3={
 		return false;
 	},
 
-	wait(seconds){
-		return this.add(this.empty_spr,{x:[0,1,'linear']}, false, seconds);
+	async wait(seconds){
+		return	this.add({x:0,visible:false,ready:true, alpha:0},{x:[0,1,'linear']}, false, seconds);
 	},
 
 	linear(x) {
@@ -608,6 +603,7 @@ main_loader={
 		loader.add('mfont2',git_src+'fonts/core_sans_ds_shadow/font.fnt');
 		loader.add('snap1','snap1.mp3');
 		loader.add('snap2','snap2.mp3');
+		loader.add('bonus','bonus.mp3');
 		loader.add('puzzle_complete','puzzle_complete.mp3');
 		loader.add('tile_bcg','res/tile_bcg.jpg');
 
@@ -791,8 +787,8 @@ class puzzle_block_class extends PIXI.Container{
 			const s=new PIXI.Sprite()
 			s.visible=false
 			s.interactive=true
-			s.pointerdown=block_down.bind(this)
-			s.pointerup=block_up.bind(this)
+			s.pointerdown=puzzle.block_down.bind(this)
+			s.pointerup=puzzle.block_up.bind(puzzle)
 			this.m_cells.push(s)
 		}
 
@@ -818,7 +814,7 @@ soft_placer={
 	area_w:0,
 	area_h:0,
 
-	run(w,h){
+	run(){
 		
 		
 		const hor_cells_fit=Math.floor(M_WIDTH/CELL_ON_STAGE_SIZE)
@@ -836,7 +832,7 @@ soft_placer={
 			for (let i=0;i<500;i++){
 
 				const sy=irnd(2,ver_cells_fit-2)
-				const sx=irnd(1,hor_cells_fit-2)
+				const sx=irnd(0,hor_cells_fit-2)
 				const block=vis_blocks[blocks_added]
 
 				const valid=this.check_block(sy,sx,block,this.area)
@@ -912,42 +908,79 @@ soft_placer={
 
 	}
 
-
 }
 
 puzzle={
 
+	on:0,
 	z:0,
 	fig_ind_area:[],
 	cell_ind_area:[],
 	blocks_num:0,
 	w:0,
 	h:0,
-	touches:0,
 	seconds:0,
 	img_texture:0,
-	
-	async activate(world_ind){
+	next_btn_res:0,
+	tar_progress:0,
+	cur_progress:0,
+	bonus_level:0,
+	cur_stars:0,
+	async activate(world_ind){	
 		
+		this.on=1
+		const world_data=worlds_data[world_ind]
+		const pics_data=world_data.pics
 		let comp=Math.max(main_menu.get_world_comp(world_ind),0)
-		if (comp>=worlds_data[world_ind].pics.length) comp=worlds_data[world_ind].pics.length-1
-		const pic_ind=worlds_data[world_ind].pics[comp]
-		const theme=worlds_data[world_ind].theme
-		const conf=worlds_data[world_ind].conf
+		if (comp>=pics_data.length) comp=pics_data.length-1
+		const pic_ind=pics_data[comp]
+		const theme=world_data.theme
+		const conf=world_data.conf
+		
+		//провряем бонусный уровень
+		this.bonus_level=(pic_ind===pics_data.length-1)?1:0
 		
 		await this.load_img(`${theme}_${pic_ind}`,`images/${theme}/${pic_ind}.jpg`)
 		this.draw(conf)
-		
-		this.inc_touches(0)
-		
-		this.seconds=0
-		objects.t_time.text='00:00'
-		this.sec_timer=setInterval(()=>{this.sec_tick()},1000)
-		
-		//objects.bcg.visible=true
-		//objects.snap_bcg.visible=true
-		objects.header_cont.visible=true
 
+		//прогресс
+		this.cur_progress=0
+		this.tar_progress=0
+		this.tar_stars=my_data.stars
+		
+		objects.t_header_stars_num.text=my_data.stars
+		
+		objects.puzzle_cont.scale_xy=1
+		objects.header_cont.visible=true
+		
+		some_process.puzzle=this.process.bind(this)
+		
+		//начальные значение прогресса
+		objects.progress_bar_mask.width=0
+		objects.t_progress.text='0%'
+	},
+	
+	process(){
+		
+		const d=this.tar_progress-this.cur_progress
+		if (d>0){
+			this.cur_progress+=0.0025
+			objects.progress_bar_mask.width=340*this.cur_progress
+			objects.t_progress.text=Math.round(this.cur_progress*100)+'%'
+		}
+		
+		const d_stars=this.tar_stars-my_data.stars
+		if (d_stars>0){
+			my_data.stars+=0.25
+			objects.t_header_stars_num.text=Math.round(my_data.stars)
+		}
+		
+	},
+	
+	update_progress(){
+		
+		const pieces_num=this.get_pieces_num()
+		this.tar_progress=1-(pieces_num-1)/(this.blocks_num-1)
 	},
 	
 	form_sec(seconds) {
@@ -967,26 +1000,6 @@ puzzle={
 			const formattedHours = hours.toString().padStart(2, '0');
 			return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
 		}
-	},
-	
-	sec_tick(){
-		
-		objects.t_time.text=this.form_sec(this.seconds)
-		this.seconds++
-	},
-	
-	inc_touches(touches){
-		
-		//установка
-		if (touches>=0){
-			this.touches=touches
-			objects.t_touches.text=this.touches
-			return
-		}
-		
-		this.touches++
-		objects.t_touches.text=this.touches
-		
 	},
 	
 	async load_img(name,path){
@@ -1017,6 +1030,68 @@ puzzle={
 
 		return [w,h]
 
+	},
+
+	search_lines(lines){
+
+		
+		
+		//выбирем начальную точку, которая не должна быть анклавом
+
+		let out_line=[999,999]
+		
+		for (const line of lines){		
+			if (line[0]<out_line[0])
+				out_line=line
+		}
+		
+		let cur_pnt_y=out_line[0]
+		let cur_pnt_x=out_line[1]
+		let sy=cur_pnt_y
+		let sx=cur_pnt_x
+		
+		const poly=[]
+		const checked_lines=[]
+		
+		for(let z=0;z<100;z++){
+			
+			if (lines.length===checked_lines.length){
+				return poly
+			}
+
+			for (line of lines){
+
+				
+				//если заново достигли начальной линии
+				if (checked_lines.includes(line)){
+					continue
+				}
+
+				if (line[0]===cur_pnt_y&&line[1]===cur_pnt_x){
+					poly.push(line[3],line[2])
+					cur_pnt_y=line[2]
+					cur_pnt_x=line[3]
+					
+					if (cur_pnt_x===sx&&cur_pnt_y===sy)
+						return poly
+					
+					checked_lines.push(line)
+					break
+				}
+
+				if (line[2]===cur_pnt_y&&line[3]===cur_pnt_x){
+					poly.push(line[1],line[0])
+					cur_pnt_y=line[0]
+					cur_pnt_x=line[1]
+					
+					if (cur_pnt_x===sx&&cur_pnt_y===sy)
+						return poly
+					
+					checked_lines.push(line)
+					break
+				}
+			}
+		}
 	},
 
 	check_figure_is_valid(figure_data){
@@ -1316,6 +1391,7 @@ puzzle={
 
 	async close_puzzle(){
 
+		this.on=0
 		clearInterval(this.sec_timer)
 		
 		const [y,x]=this.get_true_pos()
@@ -1331,15 +1407,54 @@ puzzle={
 
 		const sy=objects.puzzle_cont.y
 		const sx=objects.puzzle_cont.x
+		
+		const ty=255
+		const tx=400
+		
+		const tar_scale=400/this.w/CELL_ON_STAGE_SIZE
 
 		sound.play('puzzle_complete')
+		await anim3.wait(2)
+		await anim3.add(objects.puzzle_cont,{scale_xy:[1,tar_scale,'linear'],x:[sx,tx,'linear'],y:[sy,ty,'linear'],angle:[0,10,'linear']}, true, 1.5)
+		//await anim3.add(objects.puzzle_cont,{scale_xy:[1.5,1.4,'linear'],alpha:[1,0,'linear']}, true, 2)
 		
-		await anim3.add(objects.puzzle_cont,{scale_xy:[1,1.5,'linear'],x:[sx,400,'linear'],y:[sy,225,'linear'],angle:[0,10,'linear']}, true, 3)
-		await anim3.add(objects.puzzle_cont,{scale_xy:[1.5,1.4,'linear'],alpha:[1,0,'linear']}, true, 2)
+		objects.complete_icon_cont.x=540
+		objects.complete_icon_cont.y=365
+		objects.complete_icon_cont.visible=true
+		objects.complete_icon_mask.height=0
+		await anim3.add(objects.complete_icon_mask,{height:[0,70,'linear']}, true, 1)		
+		await anim3.add(objects.puzzle_next_btn,{x:[800,objects.puzzle_next_btn.sx,'easeOutBack']}, true, 0.5)
+		
+		await new Promise(res=>{
+			this.next_btn_res=res			
+		})
 		
 		this.close()
 		main_menu.activate(1)
 
+	},
+	
+	next_btn_down(){
+		
+		this.next_btn_res(1)
+		
+	},
+
+	get_pieces_num(){
+		
+		const u_blocks = new Set();
+		
+		for (let i=0;i<this.blocks_num;i++){
+			const block=objects.puzzle_blocks[i]
+			if (block.composition_ind>=0){
+				u_blocks.add(block.composition_ind)
+			}else{
+				 u_blocks.add(Symbol())
+			}
+
+		}		
+		return u_blocks.size
+		
 	},
 
 	async draw(conf){
@@ -1451,13 +1566,15 @@ puzzle={
 		this.fill_connect_info(i,w_total,h_total)
 
 		//размещаем аккуратно блоки
-		soft_placer.run(18,9)
+		soft_placer.run()
 		for (let i=0;i<this.blocks_num;i++){
 			const block=objects.puzzle_blocks[i]
 			puzzle.place_block_to_grid(block)
 
 		}
 
+		
+		this.update_progress()
 
 	},
 
@@ -1526,7 +1643,7 @@ puzzle={
 			}
 		}
 		
-		anim3.add(holder_block.overlay,{alpha:[0.75,0,'linear']}, false, 1)
+		anim3.add(holder_block.overlay,{alpha:[0.75,0,'linear']}, false, 0.5)
 		//anim3.add(objects.hl,{x:[0,800,'linear']}, false, 1)
 
 			
@@ -1720,13 +1837,284 @@ puzzle={
 
 	},
 
+	draw_snap_block(drag_array){
+			
+		const lines=this.get_lines_from_comp(drag_array)
+		const [miny,minx]=puzzle.get_comp_start_pos(drag_array)
+		const poly=this.search_lines(lines)
+		
+		objects.snap_shape.clear()
+		objects.snap_shape.lineStyle({width:2,color:0xffffff,cap:'round'})
+		objects.snap_shape.sy=objects.snap_shape.y=0
+		objects.snap_shape.sx=objects.snap_shape.x=0
+		
+		for (let i=0;i<poly.length/2;i++){
+
+			poly[i*2]=(poly[i*2]+minx)*CELL_ON_STAGE_SIZE
+			poly[i*2+1]=(poly[i*2+1]+miny)*CELL_ON_STAGE_SIZE
+		}
+		
+		objects.snap_shape.drawPolygon(poly)
+		objects.snap_shape.endFill()
+		
+	},
+
+	block_down(e){
+
+		if (anim3.any_on()){		
+			//return
+		}
+
+		if (!puzzle.on){		
+			return
+		}
+		
+		drag=1
+		drag_sy=e.data.global.y/app.stage.scale.y
+		drag_sx=e.data.global.x/app.stage.scale.x
+
+		if (this.composition_ind>=0)
+			drag_array=compositions[this.composition_ind]
+		else
+			drag_array=[this.ind]
+		
+		objects.snap_shape.visible=true
+		//objects.snap_bcg.visible=true
+
+		for (let ind of drag_array){
+			const block=objects.puzzle_blocks[ind]
+			// block.zIndex+=10
+			block.sy=block.y
+			block.sx=block.x
+			block.frame.tint=0xffff00
+			objects.puzzle_shadows[ind].visible=false
+			block.m_cells.forEach(c=>c.alpha=0.75)
+		}
+
+		//обновляем z индекс
+		puzzle.send_composition_to_front(drag_array)
+		puzzle.draw_snap_block(drag_array)
+
+	},
+
+	async block_up(e){
+
+
+		if (!drag){
+			return
+		}
+		drag=0
+
+		for (let m of drag_array){
+			const block=objects.puzzle_blocks[m]
+			block.frame.tint=0x333333
+			block.m_cells.forEach(c=>c.alpha=1)
+			objects.puzzle_shadows[m].visible=true
+			this.snap_block(block)
+		}
+		
+		await anim3.wait(0.1)
+
+		//compositions=[]
+		const [comp,new_comp_flag]=this.try_get_composition(drag_array)
+		if (new_comp_flag){
+
+			compositions.push([])
+			const new_comp_ind=compositions.length-1
+			const new_comp=compositions[new_comp_ind]			
+			for (let i=0;i<comp.length;i++){
+				const ind=comp[i]
+				new_comp.push(ind)
+				objects.puzzle_blocks[ind].composition_ind=new_comp_ind
+			}
+			
+			const final_pic=new_comp.length===this.blocks_num
+
+			this.draw_comp_frame(comp)
+			this.hl_shape(comp)
+			assets.snap2.play()
+			
+			//бонусы
+			if (puzzle.bonus_level && !final_pic)
+				star_bonus.add(comp,0)
+			if (final_pic)
+				star_bonus.add(comp,1)
+			
+			this.update_progress()
+
+			if (final_pic)
+				this.close_puzzle()
+			
+
+		}else{
+			assets.snap1.play()
+		}
+
+		this.send_composition_to_front(comp)
+
+		drag_array=[]
+		objects.snap_shape.visible=false
+
+	},
+
+	async snap_block(block){
+
+		const tx=block.x
+		const ty=block.y
+
+		block.gy=Math.round(ty / CELL_ON_STAGE_SIZE)
+		block.gx=Math.round(tx / CELL_ON_STAGE_SIZE)
+
+		await this.place_block_to_grid(block)
+	},
+	
+	mouse_move(e){
+
+		if(!drag) return
+		if(!drag_array) return
+
+		const my=e.data.global.y/app.stage.scale.y
+		const mx=e.data.global.x/app.stage.scale.x
+
+		const dx=mx-drag_sx
+		const dy=my-drag_sy	
+		
+		objects.snap_shape.x=objects.snap_shape.sx+dx
+		objects.snap_shape.y=objects.snap_shape.sy+dy
+		this.snap_block(objects.snap_shape)
+		
+		//draw_snap_block(drag_array)
+
+		for (const ind of drag_array){
+			const block=objects.puzzle_blocks[ind]
+			block.y=block.sy+dy
+			block.x=block.sx+dx
+
+			objects.puzzle_shadows[ind].y=block.y+5
+			objects.puzzle_shadows[ind].x=block.x+5
+		}
+
+	},
+
 	close(){
 		
 		clearInterval(this.sec_timer)
+		some_process.puzzle=()=>{}
 		//objects.bcg.visible=false
 		objects.puzzle_cont.visible=false
 		objects.header_cont.visible=false
+		objects.puzzle_next_btn.visible=false
+		objects.complete_icon_cont.visible=false
 	}
+}
+
+star_bonus={
+	
+	start_tm:0,
+	seq_len:0,
+	activate(comp){
+		
+		if (this.seq_len){
+			
+			this.show_stars()
+			
+		}
+		
+		this.seq_len++
+		
+		
+	},
+	
+	shuffle_array(array) {
+		for (let i = array.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[array[i], array[j]] = [array[j], array[i]];
+		}
+	},
+	
+	async add(comp,delay){
+				
+		const stars=[]
+		
+		const pos_data=[]
+		for (let ind of comp){
+			const block=objects.puzzle_blocks[ind]
+			for (let pnt of figures[block.id]){
+				const cen_y=(0.5+block.gy+pnt[0])*CELL_ON_STAGE_SIZE
+				const cen_x=(0.5+block.gx+pnt[1])*CELL_ON_STAGE_SIZE
+				pos_data.push([cen_y,cen_x])
+			}
+		}
+		
+		this.shuffle_array(pos_data)
+		
+		const stars_to_add=Math.min(pos_data.length,35)
+		
+		const cur_pool=[]		
+		for (let i=0;i<objects.stars_pool.length;i++){
+			const star=objects.stars_pool[i]
+			if (!star.visible){
+				cur_pool.push(star)				
+				if (cur_pool.length===stars_to_add)
+					break
+			}			
+		}
+		
+		
+		await anim3.wait(delay||0.01)
+		sound.play('bonus')
+		
+		//анимируем
+		for (let i=0;i<cur_pool.length;i++){
+			
+			const pos=pos_data[i]
+			const star=cur_pool[i]
+			
+			star.y=pos[0]+irnd(-10,10)
+			star.x=pos[1]+irnd(-10,10)
+			star.rotation=Math.random()*6.28
+			anim3.add(star,{alpha:[0,1,'linear'],scale_xy:[0,0.4,'easeOutBack']}, true, 0.25)
+			
+			
+		}
+		
+		await anim3.wait(0.5)
+		
+		for (const star of cur_pool){
+			anim3.add(star,{x:[star.x,31,'linear'],y:[star.y,17,'linear'],rotation:[0,5,'linear']}, true, 0.5).then(()=>{
+				puzzle.tar_stars++
+			})			
+		}
+		
+		await anim3.wait(0.5)
+		
+		for (const star of cur_pool)
+			anim3.add(star,{alpha:[1,0,'linear']}, false, 0.5)
+		
+	},
+
+	process(){
+		
+		const tm=Date.now()
+		const left=1-(tm-start_tm)/10000
+		objects.star_bonus_bar.mask.width=85*left
+		if (left<=0)
+			this.close()
+		
+		//objects.star_bonus_icon.rotation+=0.02
+		
+	},
+	
+	close(){
+		
+		objects.star_bonus_icon.texture=null
+		some_process.star_bonus=()=>{}
+		this.cnt=0
+		//anim3.add(objects.star_bonus_cont,{x:[objects.star_bonus_cont.x,-100,'easeInBack']}, false, 0.25)
+		this.on=0
+		
+	}	
+		
 }
 
 let drag=0
@@ -1738,8 +2126,8 @@ let compositions=[]
 main_menu={
 	
 	order:[],
-	scale:[0.8,0.9,1,0.9,0.8],
-	posx:[-50,200,400,600,850],
+	scale:[0.6,0.7,0.8,0.7,0.6],
+	posx:[-150,150,400,650,950],
 	posy:[210,200,210,200,180],
 	init_flag:0,
 	sel_world:0,
@@ -1947,185 +2335,6 @@ main_menu={
 		//objects.anim_bcg.visible=false
 		//objects.anim_bcg_overlay.visible=false
 	}
-}
-
-function search_lines(lines){
-
-	//выбирем начальную точку
-	cur_pnt_y=lines[0][0]
-	cur_pnt_x=lines[0][1]
-	checked_lines=[]
-	poly=[]
-
-	for(let z=0;z<100;z++){
-		
-		if (lines.length===checked_lines.length){
-			return poly
-		}
-
-		for (line of lines){
-
-			if (checked_lines.includes(line))
-				continue
-
-			if (line[0]===cur_pnt_y&&line[1]===cur_pnt_x){
-				poly.push(line[3],line[2])
-				cur_pnt_y=line[2]
-				cur_pnt_x=line[3]
-				checked_lines.push(line)
-				break
-			}
-
-			if (line[2]===cur_pnt_y&&line[3]===cur_pnt_x){
-				poly.push(line[1],line[0])
-				cur_pnt_y=line[0]
-				cur_pnt_x=line[1]
-				checked_lines.push(line)
-				break
-			}
-		}
-	}
-}
-
-function draw_snap_block(drag_array){
-		
-	const lines=puzzle.get_lines_from_comp(drag_array)
-	const [miny,minx]=puzzle.get_comp_start_pos(drag_array)
-	const poly=search_lines(lines)
-	
-	objects.snap_shape.clear()
-	objects.snap_shape.lineStyle({width:2,color:0xffffff,cap:'round'})
-	objects.snap_shape.sy=objects.snap_shape.y=0
-	objects.snap_shape.sx=objects.snap_shape.x=0
-	
-	for (let i=0;i<poly.length/2;i++){
-
-		poly[i*2]=(poly[i*2]+minx)*CELL_ON_STAGE_SIZE
-		poly[i*2+1]=(poly[i*2+1]+miny)*CELL_ON_STAGE_SIZE
-	}
-	
-	objects.snap_shape.drawPolygon(poly)
-	objects.snap_shape.endFill()
-	
-}
-
-function block_down(e){
-
-	//увеличиваем касания
-	puzzle.inc_touches()
-
-	drag=1
-	drag_sy=e.data.global.y/app.stage.scale.y
-	drag_sx=e.data.global.x/app.stage.scale.x
-
-	if (this.composition_ind>=0)
-		drag_array=compositions[this.composition_ind]
-	else
-		drag_array=[this.ind]
-	
-	objects.snap_shape.visible=true
-	//objects.snap_bcg.visible=true
-
-	for (let ind of drag_array){
-		const block=objects.puzzle_blocks[ind]
-		// block.zIndex+=10
-		block.sy=block.y
-		block.sx=block.x
-		block.frame.tint=0xffff00
-		objects.puzzle_shadows[ind].visible=false
-		block.m_cells.forEach(c=>c.alpha=0.75)
-	}
-
-	//обновляем z индекс
-	puzzle.send_composition_to_front(drag_array)
-	draw_snap_block(drag_array)
-
-}
-
-async function block_up(e){
-
-	drag=0
-
-	for (let m of drag_array){
-		const block=objects.puzzle_blocks[m]
-		block.frame.tint=0x333333
-		block.m_cells.forEach(c=>c.alpha=1)
-		objects.puzzle_shadows[m].visible=true
-		snap_block(block)
-	}
-	await anim3.wait(0.1)
-
-	//compositions=[]
-	const [comp,new_comp_flag]=puzzle.try_get_composition(drag_array)
-	if (new_comp_flag){
-
-		compositions.push([])
-		const new_comp_ind=compositions.length-1
-		const new_comp=compositions[new_comp_ind]
-		for (let i=0;i<comp.length;i++){
-			const ind=comp[i]
-			new_comp.push(ind)
-			objects.puzzle_blocks[ind].composition_ind=new_comp_ind
-		}
-
-		puzzle.draw_comp_frame(comp)
-		puzzle.hl_shape(comp)
-		assets.snap2.play()
-
-		if (new_comp.length===puzzle.blocks_num){
-			puzzle.close_puzzle()
-		}
-
-	}else{
-		assets.snap1.play()
-	}
-
-	puzzle.send_composition_to_front(comp)
-
-	objects.snap_shape.visible=false
-
-}
-
-async function snap_block(block){
-
-	const tx=block.x
-	const ty=block.y
-
-	block.gy=Math.round(ty / CELL_ON_STAGE_SIZE)
-	block.gx=Math.round(tx / CELL_ON_STAGE_SIZE)
-
-	await puzzle.place_block_to_grid(block)
-}
-
-function mouse_move(e){
-
-	if(!drag) return
-	if(!drag_array) return
-
-	const my=e.data.global.y/app.stage.scale.y
-	const mx=e.data.global.x/app.stage.scale.x
-
-	const dx=mx-drag_sx
-	const dy=my-drag_sy
-	
-	
-	objects.snap_shape.x=objects.snap_shape.sx+dx
-	objects.snap_shape.y=objects.snap_shape.sy+dy
-	snap_block(objects.snap_shape)
-	
-	
-
-	//draw_snap_block(drag_array)
-
-	for (const ind of drag_array){
-		const block=objects.puzzle_blocks[ind]
-		block.y=block.sy+dy
-		block.x=block.sx+dx
-
-		objects.puzzle_shadows[ind].y=block.y+5
-		objects.puzzle_shadows[ind].x=block.x+5
-	}
-
 }
 
 async function init_game_env(lang) {
