@@ -14,7 +14,7 @@ const IMG_SIZE=800
 const img_loader=new PIXI.Loader()
 
 const worlds_data=[
-	{conf:[4,4],theme:'food',pics:[0,1,2,3]},
+	{conf:[6,6],theme:'food',pics:[0,1,2,3]},
 	{conf:[6,6],theme:'movies',pics:[0,1,2,3]},
 	{conf:[6,6],theme:'cartoons',pics:[0,1,2,3]},
 	{conf:[6,6],theme:'cats',pics:[0,1,2,3]},
@@ -27,10 +27,15 @@ const worlds_data=[
 	{conf:[7,7],theme:'food',pics:[12,13,14,15,16,17,18]},
 	{conf:[7,7],theme:'cartoons',pics:[14,15,16,17,18,19]},	
 	{conf:[8,8],theme:'movies',pics:[8,9,10,11,12,13,14,15]},
+	{conf:[7,7],theme:'food',pics:[19,20,21,22,23,24,25]},
 	{conf:[8,8],theme:'cartoons',pics:[20,21,22,23,24]},
 	{conf:[8,8],theme:'movies',pics:[16,17,18,19,20,21,22,23]},
 	{conf:[7,7],theme:'cartoons',pics:[9,10,11,12,13]},
 	{conf:[8,8],theme:'movies',pics:[24,25,26,27,28]},
+	{conf:[8,8],theme:'cartoons',pics:[14,15,16,17,18,19,20,21,22,23,24]},
+	{conf:[8,8],theme:'interior',pics:[0,1,2,3,4,5,6,7,8,9,10,11]},
+	{conf:[8,8],theme:'movies',pics:[29,30,31,32,33,34,35]},
+	
 
 ]
 let all_completed=0
@@ -564,24 +569,34 @@ main_loader={
 
 	preload_assets:0,
 
-	spritesheet_to_tex(t,xframes,yframes,total_w,total_h,xoffset,yoffset){
-
-
-		const frame_width=xframes?total_w/xframes:0;
-		const frame_height=yframes?total_h/yframes:0;
-
-		const textures=[];
-		for (let y=0;y<yframes;y++){
-			for (let x=0;x<xframes;x++){
-
-				const rect = new PIXI.Rectangle(xoffset+x*frame_width, yoffset+y*frame_height, frame_width, frame_height);
-				const quadTexture = new PIXI.Texture(t.baseTexture, rect);
-				textures.push(quadTexture);
-			}
+	divide_texture(t,frame_w,frame_h, names){
+		
+		const frames_x=Math.floor(t.width/frame_w)
+		const frames_y=Math.floor(t.height/frame_h)
+			
+		if (typeof(names)==='string'){
+			assets[names]=[]
+			let i=0
+			for (let y=0;y<frames_y;y++){
+				for (let x=0;x<frames_x;x++){
+					const rect=new PIXI.Rectangle(x*frame_w, y*frame_h, frame_w, frame_h)
+					assets[names][i]=new PIXI.Texture(t.baseTexture, rect)
+					i++
+				}
+			}			
+		}else{
+			
+			let i=0
+			for (let y=0;y<frames_y;y++){
+				for (let x=0;x<frames_x;x++){
+					const rect=new PIXI.Rectangle(x*frame_w, y*frame_h, frame_w, frame_h)
+					assets[names[i]]=new PIXI.Texture(t.baseTexture, rect)
+					i++
+				}
+			}			
 		}
-		return textures;
 	},
-
+	
 	async load1(){
 
 		git_src=''
@@ -616,6 +631,11 @@ main_loader={
 			const res=loader.resources[res_name];
 			assets[res_name]=res.texture||res.sound||res.data;
 		}
+
+
+		this.divide_texture(assets.fruits_pack,180,180,'fruits_pack')
+		this.divide_texture(assets.donuts_pack,180,180,'donuts_pack')
+		this.divide_texture(assets.halloween_pack,180,180,'halloween_pack')
 
 		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
 		for (var i = 0; i < load_list.length; i++) {
@@ -703,7 +723,14 @@ main_loader={
 		//ждем загрузки
 		await new Promise(res=>loader.load(res))
 
+		//переносим все в ассеты
+		for (const res_name in loader.resources){
+			const res=loader.resources[res_name];
+			assets[res_name]=res.texture||res.sound||res.data;
+		}
 
+		
+		
 		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
 		const main_load_list=eval(assets.main_load_list);
 		for (var i = 0; i < main_load_list.length; i++) {
@@ -926,6 +953,11 @@ puzzle={
 	cur_progress:0,
 	bonus_level:0,
 	cur_stars:0,
+	rt:PIXI.RenderTexture.create({width:800,height:800}),
+	rt_spr:new PIXI.Sprite(),
+	bcg_g:new PIXI.Graphics(),
+	icons_obj_arr:[],
+	
 	async activate(world_ind){	
 		
 		this.on=1
@@ -964,7 +996,7 @@ puzzle={
 		
 		const d=this.tar_progress-this.cur_progress
 		if (d>0){
-			this.cur_progress+=0.0025
+			this.cur_progress+=0.025
 			objects.progress_bar_mask.width=340*this.cur_progress
 			objects.t_progress.text=Math.round(this.cur_progress*100)+'%'
 		}
@@ -1004,6 +1036,9 @@ puzzle={
 	
 	async load_img(name,path){
 		
+		this.make_random_img()
+		return
+		
 		if (img_loader.resources[name]) {
 			this.img_texture=img_loader.resources[name].texture
 			return
@@ -1013,6 +1048,111 @@ puzzle={
 		await new Promise(res=>img_loader.load(res))
 		
 		this.img_texture=img_loader.resources[name].texture
+		
+	},
+	
+	async show_icons_overlay(){
+		
+		objects.icons_pool.forEach(i=>i.visible=false)
+		
+		const [y,x]=this.get_true_pos()
+		
+		for (const obj of this.icons_obj_arr){
+			
+			const icon=objects.icons_pool.find(i=>!i.visible)
+			if(!icon) continue
+			icon.x=x+obj.x*300/800
+			icon.y=y+obj.y*300/800
+			icon.texture=assets.halloween_pack[obj.icon_ind]
+			icon.width=obj.size*300/800
+			icon.height=obj.size*300/800
+			icon.angle=obj.angle
+			icon.visible=true
+		}
+		
+		
+		this.bcg_g.clear()
+		this.bcg_g.beginFill(0xffaabb)
+		this.bcg_g.drawRect(0,0,800,800)
+		this.bcg_g.endFill()
+		app.renderer.render(this.bcg_g,{renderTexture:this.rt})
+
+		//await anim3.add(objects.puzzle_cont,{alpha:[1,0,'linear']}, false, 3)
+		
+		for (const icon of objects.icons_pool){
+			if (!icon.visible) continue
+			await anim3.wait(0.5)
+			anim3.add(icon,{x:[icon.x,31,'linear'],y:[icon.y,17,'linear'],rotation:[icon.rotation,icon.rotation+5,'linear']}, false, 1)
+		}
+		
+		await anim3.wait(2)
+		
+	},
+	
+	make_random_img(){
+		
+		this.rt_spr.anchor.set(0.5,0.5)
+		
+		this.bcg_g.clear()
+		this.bcg_g.beginFill(0xffaabb)
+		this.bcg_g.drawRect(0,0,800,800)
+		this.bcg_g.endFill()
+		app.renderer.render(this.bcg_g,{renderTexture:this.rt})
+		
+		this.icons_obj_arr=[]
+		
+		
+		for (let i=0;i<500;i++){			
+			
+			const rnd_x=irnd(0,800)
+			const rnd_y=irnd(0,800)
+			const rnd_size=irnd(180,300)
+			const r=rnd_size*0.4
+
+			if (rnd_x<r||rnd_x>800-r||rnd_y<r||rnd_y>800-r)
+				continue
+			
+			//проверяем с существующими объектами
+			let intersect=0
+			for (const obj of this.icons_obj_arr){
+				
+				const dx=obj.x-rnd_x
+				const dy=obj.y-rnd_y
+				const d=Math.sqrt(dx*dx+dy*dy)
+				const min_d=r+obj.r
+				if (d<min_d){
+					intersect=1
+					break
+				}			
+			}
+			if(intersect)
+				continue
+			
+			this.icons_obj_arr.push({x:rnd_x,y:rnd_y,size:rnd_size,r})
+
+		}
+		
+		
+		//размещаем по найденным позициям
+		const img_pack=assets.halloween_pack
+		for (const obj of this.icons_obj_arr){
+			
+			const icon_ind=irnd(0,img_pack.length-1)
+			obj.icon_ind=icon_ind
+			this.rt_spr.texture=img_pack[icon_ind]
+			this.rt_spr.x=obj.x
+			this.rt_spr.y=obj.y
+			this.rt_spr.angle=irnd(0,360)
+			obj.angle=this.rt_spr.angle
+			this.rt_spr.width=obj.size
+			this.rt_spr.height=obj.size			
+			app.renderer.render(this.rt_spr,{renderTexture:this.rt,clear:false})
+		}
+		
+		
+		this.img_texture=this.rt
+		
+		
 		
 	},
 
@@ -1412,10 +1552,13 @@ puzzle={
 		const tx=400
 		
 		const tar_scale=400/this.w/CELL_ON_STAGE_SIZE
-
+				
 		sound.play('puzzle_complete')
-		await anim3.wait(2)
-		await anim3.add(objects.puzzle_cont,{scale_xy:[1,tar_scale,'linear'],x:[sx,tx,'linear'],y:[sy,ty,'linear'],angle:[0,10,'linear']}, true, 1.5)
+		
+		
+		await anim3.wait(3)
+		this.show_icons_overlay()
+		//await anim3.add(objects.puzzle_cont,{scale_xy:[1,tar_scale,'linear'],x:[sx,tx,'linear'],y:[sy,ty,'linear'],angle:[0,10,'linear']}, true, 1.5)
 		//await anim3.add(objects.puzzle_cont,{scale_xy:[1.5,1.4,'linear'],alpha:[1,0,'linear']}, true, 2)
 		
 		objects.complete_icon_cont.x=540
@@ -1515,7 +1658,6 @@ puzzle={
 
 			//определяем размеры фигуры в у.е.
 			const [figure_width,figure_height]=this.get_size(id)
-
 
 			shadow.clear()
 			shadow.beginFill(0x333333);
